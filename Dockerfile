@@ -7,6 +7,15 @@ RUN apt-get update && apt-get install -y \
     libleptonica-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Kraken and dependencies
+RUN apt-get update && apt-get install -y \
+    libopenblas-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install kraken
+
 # Install Python deps
 WORKDIR /app
 COPY requirements.txt .

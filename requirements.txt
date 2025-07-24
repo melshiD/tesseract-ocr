@@ -3,3 +3,5 @@ uvicorn
 pytesseract
 pillow
 python-multipart
+kraken
+numpy
