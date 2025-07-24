@@ -29,14 +29,19 @@ async def extract_text(file: UploadFile = File(...)):
 
 @app.post("/kraken")
 async def extract_handwriting(file: UploadFile = File(...)):
-    image_data = await file.read()
-    image = Image.open(io.BytesIO(image_data)).convert('L') #grayscale
+    try:
+        image_data = await file.read()
+        image = Image.open(io.BytesIO(image_data)).convert('L')  # grayscale
 
-    # Binarize and segment
-    img = binarization.nlbin(image)
-    seg = pageseg.segment(img)
-    model = rpred.load_any('default') #or use custom model
-    preds = rpred.rpred(model, img, seg)
+        # Binarize and segment
+        img = binarization.nlbin(image)
+        seg = pageseg.segment(img)
+        model = rpred.load_any('default')  # This may be the failing line
+        preds = rpred.rpred(model, img, seg)
 
-    text = "\n".join([pred.prediction for pred in preds])
-    return {"text" : text}
+        text = "\n".join([pred.prediction for pred in preds])
+        return {"text": text}
+
+    except Exception as e:
+        print("KRAKEN ERROR:", traceback.format_exc())  # Show full traceback in Render logs
+        return JSONResponse(status_code=500, content={"error": str(e)})
