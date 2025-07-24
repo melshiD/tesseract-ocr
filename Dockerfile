@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libtesseract-dev \
     libleptonica-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Kraken and dependencies
