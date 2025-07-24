@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pytesseract
 from kraken import binarization, pageseg, rpred
 import numpy as np
+import traceback
 from PIL import Image
 import io
 
