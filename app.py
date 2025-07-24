@@ -37,7 +37,7 @@ async def extract_handwriting(file: UploadFile = File(...)):
         # Binarize and segment
         img = binarization.nlbin(image)
         seg = pageseg.segment(img)
-        model = rpred.load_model('models/handwriting.mlmodel')  # This may be the failing line
+        model = rpred.load_model('app/models/handwriting.mlmodel')
         preds = rpred.rpred(model, img, seg)
 
         text = "\n".join([pred.prediction for pred in preds])

@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/models && \
     curl -L https://kraken-models.mittagqi.dev/models/2023-07-12-handwriting.mlmodel \
     -o /app/models/handwriting.mlmodel
+    test -s /app/models/handwriting.mlmodel
 
 # Copy code
 COPY . .
