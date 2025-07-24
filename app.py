@@ -9,6 +9,18 @@ import io
 
 app = FastAPI()
 
+MODEL_PATH = "app/models/handwriting.mlmodel"
+MODEL_URL = "https://kraken-models.mittagqi.dev/models/2023-07-12-handwriting.mlmodel"
+
+def ensure_model():
+    if not Path(MODEL_PATH).exists():
+        print("Downloading Kraken model at runtime...")
+        os.makedirs(os.path.dirname(MODEL_PATH), exists_ok=True)
+        r = requests.get(MODEL_URL)
+        r.raise_for_status()
+        with open(MODEL_PATH, "wb") as f:
+            f.write(r.content)
+
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
@@ -31,13 +43,15 @@ async def extract_text(file: UploadFile = File(...)):
 @app.post("/kraken")
 async def extract_handwriting(file: UploadFile = File(...)):
     try:
+        ensure_model()
+
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data)).convert('L')  # grayscale
 
         # Binarize and segment
         img = binarization.nlbin(image)
         seg = pageseg.segment(img)
-        model = rpred.load_model('app/models/handwriting.mlmodel')
+        model = rpred.load_model(MODEL_PATH)
         preds = rpred.rpred(model, img, seg)
 
         text = "\n".join([pred.prediction for pred in preds])
