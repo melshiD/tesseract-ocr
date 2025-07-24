@@ -1,10 +1,12 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import pytesseract
 from kraken import binarization, pageseg, rpred
 import numpy as np
 import traceback
 from PIL import Image
+from pathlib import Path
 import io
 
 app = FastAPI()
