@@ -19,7 +19,7 @@ MODEL_URL = "https://kraken-models.mittagqi.dev/models/2023-07-12-handwriting.ml
 def ensure_model():
     if not Path(MODEL_PATH).exists():
         print("Downloading Kraken model at runtime...")
-        os.makedirs(os.path.dirname(MODEL_PATH), exists_ok=True)
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
         r = requests.get(MODEL_URL)
         r.raise_for_status()
         with open(MODEL_PATH, "wb") as f:
