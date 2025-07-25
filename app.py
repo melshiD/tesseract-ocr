@@ -8,6 +8,7 @@ import traceback
 from PIL import Image
 from pathlib import Path
 import io
+import os
 
 app = FastAPI()
 
