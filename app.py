@@ -5,6 +5,7 @@ import pytesseract
 from kraken import binarization, pageseg, rpred
 import numpy as np
 import traceback
+import requests
 from PIL import Image
 from pathlib import Path
 import io
