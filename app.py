@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import pytesseract
-from kraken import binarization, pageseg, rpred
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 import numpy as np
 import traceback
 import requests
@@ -13,17 +13,8 @@ import os
 
 app = FastAPI()
 
-MODEL_PATH = "app/models/handwriting.mlmodel"
-MODEL_URL = "https://kraken-models.mittagqi.dev/models/2023-07-12-handwriting.mlmodel"
-
-def ensure_model():
-    if not Path(MODEL_PATH).exists():
-        print("Downloading Kraken model at runtime...")
-        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-        r = requests.get(MODEL_URL)
-        r.raise_for_status()
-        with open(MODEL_PATH, "wb") as f:
-            f.write(r.content)
+trocr_processor = TrOCRProcessor.from_pretrained('microsoft//trocr-base-handwritten')
+trocr_model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-handwritten
 
 # Enable CORS
 app.add_middleware(
@@ -44,23 +35,18 @@ async def extract_text(file: UploadFile = File(...)):
     text = pytesseract.image_to_string(image)
     return {"text": text}
 
-@app.post("/kraken")
-async def extract_handwriting(file: UploadFile = File(...)):
+@app.post("/trocr")
+async def extract_trocr(file: UploadFile = File(...)):
     try:
-        ensure_model()
-
         image_data = await file.read()
-        image = Image.open(io.BytesIO(image_data)).convert('L')  # grayscale
+        image = Image.open(io.BytesIO(image_data)).convert("RGB")
 
-        # Binarize and segment
-        img = binarization.nlbin(image)
-        seg = pageseg.segment(img)
-        model = rpred.load_model(MODEL_PATH)
-        preds = rpred.rpred(model, img, seg)
+        # Preprocess image and run inference
+        pixel_values = trocr_processor(images=image, return_tensors="pt").pixel_values
+        generated_ids = trocr_model.generate(pixel_values)
+        text = trocr_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-        text = "\n".join([pred.prediction for pred in preds])
         return {"text": text}
-
     except Exception as e:
-        print("KRAKEN ERROR:", traceback.format_exc())  # Show full traceback in Render logs
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
