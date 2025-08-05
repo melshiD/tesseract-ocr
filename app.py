@@ -13,9 +13,21 @@ import os
 
 app = FastAPI()
 
-# Fix the syntax error and use consistent model names
-trocr_processor = TrOCRProcessor.from_pretrained('microsoft/trocr-base-handwritten')
-trocr_model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-handwritten')
+# Global variables to store models (will be loaded on first request)
+trocr_processor = None
+trocr_model = None
+
+def load_trocr_models():
+    """Lazy loading function for TrOCR models"""
+    global trocr_processor, trocr_model
+    
+    if trocr_processor is None or trocr_model is None:
+        print("Loading TrOCR models (first request)...")
+        trocr_processor = TrOCRProcessor.from_pretrained('microsoft/trocr-base-handwritten')
+        trocr_model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-handwritten')
+        print("TrOCR models loaded successfully!")
+    
+    return trocr_processor, trocr_model
 
 # Enable CORS
 app.add_middleware(
@@ -57,15 +69,19 @@ async def extract_text(file: UploadFile = File(...)):
 async def extract_trocr(file: UploadFile = File(...)):
     try:
         print(f"Processing TrOCR request for file: {file.filename}")
+        
+        # Load models on first request (lazy loading)
+        processor, model = load_trocr_models()
+        
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
         
         print(f"Image loaded: {image.size} pixels")
 
         # Preprocess image and run inference
-        pixel_values = trocr_processor(images=image, return_tensors="pt").pixel_values
-        generated_ids = trocr_model.generate(pixel_values)
-        text = trocr_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        pixel_values = processor(images=image, return_tensors="pt").pixel_values
+        generated_ids = model.generate(pixel_values)
+        text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
         print(f"TrOCR completed, extracted text: '{text[:50]}{'...' if len(text) > 50 else ''}'")
         return {"text": text, "method": "trocr-handwritten", "filename": file.filename}
